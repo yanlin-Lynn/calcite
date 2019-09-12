@@ -1757,6 +1757,11 @@ public class RelOptRulesTest extends RelOptTestBase {
             + "on e.ename = b.ename and e.deptno = 10");
   }
 
+  @Test public void testPushJoinThroughSemiJoin() {
+    String sql = "select ename, sal from emp where ename in (select distinct ename from bonus)";
+    checkPlanning(ProjectJoinTransposeRule.INSTANCE, sql);
+  }
+
   @Test public void testPushProjectPastSetOp() {
     checkPlanning(ProjectSetOpTransposeRule.INSTANCE,
         "select sal from "
