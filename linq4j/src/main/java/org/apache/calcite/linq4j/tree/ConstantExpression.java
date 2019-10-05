@@ -262,7 +262,7 @@ public class ConstantExpression extends Expression {
   }
 
   private static ExpressionWriter set(ExpressionWriter writer, Set set,
-                                      String begin, String entrySep, String end) {
+      String begin, String entrySep, String end) {
     writer.append(begin);
     boolean comma = false;
     for (Object o : set.toArray()) {

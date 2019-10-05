@@ -27,7 +27,7 @@ public class MatchUtils {
   }
 
   /**
-   * Returns the row with the highest index whose corresponding symbol matches, null otherwese.
+   * Returns the row with the highest index whose corresponding symbol matches, null otherwise.
    * @param symbol Target Symbol
    * @param rows List of passed rows
    * @param symbols Corresponding symbols to rows
@@ -41,10 +41,6 @@ public class MatchUtils {
       }
     }
     return -1;
-  }
-
-  public static void print(int s) {
-    System.out.println(s);
   }
 }
 

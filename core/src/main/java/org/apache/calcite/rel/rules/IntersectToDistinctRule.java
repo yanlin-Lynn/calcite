@@ -43,7 +43,7 @@ import java.math.BigDecimal;
  *
  * <h2>Example</h2>
  *
- * <p>Query: <code>R1 Intersect All R2</code>
+ * <p>Query: <code>R1 Intersect R2</code>
  *
  * <p><code>R3 = GB(R1 on all attributes, count(*) as c)<br>
  *   union all<br>

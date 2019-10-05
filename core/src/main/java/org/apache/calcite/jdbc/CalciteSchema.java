@@ -131,7 +131,7 @@ public abstract class CalciteSchema {
    * (that is, by the underlying {@link Schema} object, not explicitly
    * by a call to {@link #add(String, RelProtoDataType)}), or null. */
   protected abstract TypeEntry getImplicitType(String name,
-                                                boolean caseSensitive);
+      boolean caseSensitive);
 
   /** Returns table function with a given name and zero arguments that is
    * defined implicitly (that is, by the underlying {@link Schema} object,
