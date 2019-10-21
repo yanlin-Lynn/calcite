@@ -597,6 +597,9 @@ public abstract class RelDataTypeFactoryImpl implements RelDataTypeFactory {
     public RelDataType getComponentType() {
       final Class componentType = clazz.getComponentType();
       if (componentType == null) {
+        if (getSqlTypeName() == SqlTypeName.ARRAY) {
+          return createSqlType(SqlTypeName.ANY);
+        }
         return null;
       } else {
         return createJavaType(componentType);

@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -159,7 +160,10 @@ public class SqlTypeFactoryTest {
    * Support MAP type for JavaToSqlTypeConversionRules</a>. */
   @Test public void testCreateTypeWithJavaMapType() {
     SqlTypeFixture f = new SqlTypeFixture();
-    RelDataType relDataType = f.typeFactory.createJavaType(Map.class);
+    RelDataType relDataType = f.typeFactory.createJavaType(List.class);
+    assertThat(relDataType.getSqlTypeName(), is(SqlTypeName.MAP));
+
+    relDataType = f.typeFactory.createJavaType(HashMap.class);
     assertThat(relDataType.getSqlTypeName(), is(SqlTypeName.MAP));
 
     try {
@@ -168,6 +172,19 @@ public class SqlTypeFactoryTest {
     } catch (AssertionError e) {
       assertThat(e.getMessage(), is("use createMapType() instead"));
     }
+  }
+
+  @Test public void testCreateTypeWithSubclassOfMapAndList() {
+    SqlTypeFixture f = new SqlTypeFixture();
+    RelDataType relDataType = f.typeFactory.createJavaType(List.class);
+    RelDataType subRelDataType = f.typeFactory.createJavaType(ArrayList.class);
+    assertThat(relDataType.getSqlTypeName(), is(SqlTypeName.ARRAY));
+    assertThat(relDataType.getSqlTypeName(), is(subRelDataType.getSqlTypeName()));
+
+    relDataType = f.typeFactory.createJavaType(Map.class);
+    subRelDataType = f.typeFactory.createJavaType(HashMap.class);
+    assertThat(relDataType.getSqlTypeName(), is(SqlTypeName.MAP));
+    assertThat(relDataType.getSqlTypeName(), is(subRelDataType.getSqlTypeName()));
   }
 
 }

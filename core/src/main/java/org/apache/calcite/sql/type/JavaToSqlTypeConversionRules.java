@@ -99,7 +99,13 @@ public class JavaToSqlTypeConversionRules {
    * @return a corresponding SqlTypeName if found, otherwise null is returned
    */
   public SqlTypeName lookup(Class javaClass) {
-    return rules.get(javaClass);
+    Class clazz = javaClass;
+    if (Map.class.isAssignableFrom(javaClass)) {
+      clazz = Map.class;
+    } else if (List.class.isAssignableFrom(javaClass)) {
+      clazz = List.class;
+    }
+    return rules.get(clazz);
   }
 
   /**
