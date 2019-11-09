@@ -293,6 +293,16 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
   }
 
   public void setRoot(RelNode rel) {
+    boolean debugSetRoot = false;
+    if (debugSetRoot) {
+      System.out.println("The root is as follows:");
+      System.out.println(RelOptUtil.toString(rel));
+      System.out.println("before set root ");
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      dumpGraphviz(pw);
+      System.out.println(sw.toString());
+    }
     // We're registered all the rules, and therefore RelNode classes,
     // we're interested in, and have not yet started calling metadata providers.
     // So now is a good time to tell the metadata layer what to expect.
@@ -306,6 +316,13 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
     // Making a node the root changes its importance.
     this.ruleQueue.recompute(this.root);
     ensureRootConverters();
+    if (debugSetRoot) {
+      System.out.println("after set root ");
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      dumpGraphviz(pw);
+      System.out.println(sw.toString());
+    }
   }
 
   public RelNode getRoot() {
@@ -528,6 +545,19 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
   }
 
   public RelNode changeTraits(final RelNode rel, RelTraitSet toTraits) {
+    boolean debugChangeTrait = false;
+    if (debugChangeTrait) {
+      System.out.println("###########################################################"
+          + "###########################################################################");
+      System.out.println("The logical relnode before changeTraits:");
+      System.out.println(RelOptUtil.toString(rel, SqlExplainLevel.NON_COST_ATTRIBUTES));
+      System.out.println("change using trait: " + toTraits + ", for relnode: " + rel);
+      System.out.println("before change trait: ");
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      dumpGraphviz(pw);
+      System.out.println(sw.toString());
+    }
     assert !rel.getTraitSet().equals(toTraits);
     assert toTraits.allSimple();
 
@@ -536,7 +566,15 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
       return rel2;
     }
 
-    return rel2.set.getOrCreateSubset(rel.getCluster(), toTraits.simplify());
+    RelNode result = rel2.set.getOrCreateSubset(rel.getCluster(), toTraits.simplify());
+    if (debugChangeTrait) {
+      System.out.println("after change trait: ");
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      dumpGraphviz(pw);
+      System.out.println(sw.toString());
+    }
+    return result;
   }
 
   public RelOptPlanner chooseDelegate() {
@@ -574,6 +612,8 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
    * query
    */
   public RelNode findBestExp() {
+    boolean debugCallRule = true;
+    int ruleCallId = 1;
     ensureRootConverters();
     registerMaterializations();
     int cumulativeTicks = 0;
@@ -631,13 +671,35 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
         if (match == null) {
           break;
         }
+        System.out.println("call of rule: " + match.getRule() + ", with call id " + ruleCallId++);
 
+        if (false) {
+          System.out.println("**********************************************************"
+              + "******************************************************************");
+          System.out.println("before call of rule: " + match.getRule());
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          dumpGraphviz(pw);
+          System.out.println(sw.toString());
+        }
         assert match.getRule().matches(match);
         match.onMatch();
 
         // The root may have been merged with another
         // subset. Find the new root subset.
         root = canonize(root);
+        if (false) {
+          System.out.println("********************************************************"
+              + "********************************************************************");
+          System.out.println("after call of rule: " + match.getRule());
+          StringWriter sw = new StringWriter();
+          PrintWriter pw = new PrintWriter(sw);
+          dumpGraphviz(pw);
+          System.out.println(sw.toString());
+        }
+        // print queue after match
+        System.out.println("rule queue after call of rule: " + match.getRule());
+        ruleQueue.print();
       }
 
       ruleQueue.phaseCompleted(phase);
@@ -1206,7 +1268,9 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
       activeRels.addAll(Arrays.asList(volcanoRuleCall.rels));
     }
     pw.println("digraph G {");
-    pw.println("\troot [style=filled,label=\"Root\"];");
+    if (root != null) {
+      pw.println("\troot [style=filled,label=\"Root\"];");
+    }
     PartiallyOrderedSet<RelSubset> subsetPoset = new PartiallyOrderedSet<>(
         (e1, e2) -> e1.getTraitSet().satisfies(e2.getTraitSet()));
     Set<RelSubset> nonEmptySubsets = new HashSet<>();
@@ -1296,8 +1360,12 @@ public class VolcanoPlanner extends AbstractRelOptPlanner {
     }
     // Note: it is important that all the links are declared AFTER declaration of the nodes
     // Otherwise Graphviz creates nodes implicitly, and puts them into a wrong cluster
-    pw.print("\troot -> subset");
-    pw.print(root.getId());
+    if (root != null) {
+      pw.print("\troot -> subset");
+    }
+    if (root != null) {
+      pw.print(root.getId());
+    }
     pw.println(";");
     for (RelSet set : ordering.immutableSortedCopy(allSets)) {
       for (RelNode rel : set.rels) {

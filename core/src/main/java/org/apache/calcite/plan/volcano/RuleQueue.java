@@ -150,6 +150,23 @@ class RuleQueue {
     }
   }
 
+  public void print() {
+    for (Map.Entry<VolcanoPlannerPhase, PhaseMatchList> matchMapEntry : matchListMap.entrySet()) {
+      if (!matchMapEntry.getValue().list.isEmpty()) {
+        List<VolcanoRuleMatch> tmp = new ArrayList<>();
+        tmp.addAll(matchMapEntry.getValue().list);
+        tmp.sort(MATCH_COMPARATOR);
+        System.out.println("Phase: "
+            + matchMapEntry.getKey()
+            + "*********************************************");
+        for (VolcanoRuleMatch match : tmp) {
+          System.out.println("\t" + match);
+        }
+      }
+    }
+    System.out.println();
+  }
+
   /**
    * Removes the {@link PhaseMatchList rule-match list} for the given planner
    * phase.

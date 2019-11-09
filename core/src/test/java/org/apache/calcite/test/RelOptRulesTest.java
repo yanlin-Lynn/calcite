@@ -5616,14 +5616,8 @@ public class RelOptRulesTest extends RelOptTestBase {
     RuleSet ruleSet =
         RuleSets.ofList(
             FilterProjectTransposeRule.INSTANCE,
-            FilterMergeRule.INSTANCE,
-            ProjectMergeRule.INSTANCE,
-            new ProjectFilterTransposeRule(Project.class, Filter .class,
-                RelFactories.LOGICAL_BUILDER, exprCondition),
             EnumerableRules.ENUMERABLE_PROJECT_RULE,
             EnumerableRules.ENUMERABLE_FILTER_RULE,
-            EnumerableRules.ENUMERABLE_SORT_RULE,
-            EnumerableRules.ENUMERABLE_LIMIT_RULE,
             EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
     Program program = Programs.of(ruleSet);
 

@@ -82,7 +82,7 @@ public class VolcanoPlannerTest {
 
     planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
 
-    planner.addRule(new PhysLeafRule());
+    // planner.addRule(new PhysLeafRule());
 
     RelOptCluster cluster = newCluster(planner);
     NoneLeafRel leafRel =
@@ -105,8 +105,8 @@ public class VolcanoPlannerTest {
     VolcanoPlanner planner = new VolcanoPlanner();
     planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
 
-    planner.addRule(new PhysLeafRule());
-    planner.addRule(new GoodSingleRule());
+    //planner.addRule(new PhysLeafRule());
+    //planner.addRule(new GoodSingleRule());
 
     RelOptCluster cluster = newCluster(planner);
     NoneLeafRel leafRel =

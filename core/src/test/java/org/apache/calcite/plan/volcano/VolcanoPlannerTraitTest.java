@@ -39,6 +39,7 @@ import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.util.Pair;
 
 import com.google.common.collect.HashMultimap;
@@ -126,6 +127,8 @@ public class VolcanoPlannerTraitTest {
         planner.changeTraits(noneRel,
             cluster.traitSetOf(EnumerableConvention.INSTANCE)
                 .replace(ALT_TRAIT2));
+    System.out.println(RelOptUtil.toString(noneRel, SqlExplainLevel.NON_COST_ATTRIBUTES));
+    System.out.println(RelOptUtil.toString(convertedRel, SqlExplainLevel.NON_COST_ATTRIBUTES));
 
     planner.setRoot(convertedRel);
     RelNode result = planner.chooseDelegate().findBestExp();
