@@ -45,6 +45,7 @@ import org.apache.calcite.rex.RexWindow;
 import org.apache.calcite.rex.RexWindowBound;
 import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
@@ -1429,6 +1430,31 @@ public abstract class SqlImplementor {
 
     public void setGroupBy(SqlNodeList nodeList) {
       assert clauses.contains(Clause.GROUP_BY);
+      if (select.getGroup() != null) {
+        final SqlNode subSelect = new SqlSelect(
+            select.getParserPosition(),
+            null,
+            select.getSelectList(),
+            select.getFrom(),
+            select.getWhere(),
+            select.getGroup(),
+            select.getHaving(),
+            select.getWindowList(),
+            select.getOrderList(),
+            select.getOffset(),
+            select.getFetch(),
+            select.getHints());
+        assert aliases.size() == 1;
+        final String alias =  aliases.keySet().iterator().next();
+        final SqlBasicCall asCall = new SqlBasicCall(
+            new SqlAsOperator(),
+            new SqlNode[] {
+                subSelect,
+                new SqlIdentifier(alias, subSelect.getParserPosition())
+            },
+            subSelect.getParserPosition());
+        select.setFrom(asCall);
+      }
       select.setGroupBy(nodeList);
     }
 

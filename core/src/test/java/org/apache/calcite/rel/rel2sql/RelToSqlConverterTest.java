@@ -4244,6 +4244,47 @@ public class RelToSqlConverterTest {
             .ok(expected5);
   }
 
+  @Test public void testGroupByInSubQuery() {
+    final String query = "select \"product_id\", count(*) from (\n"
+        + "select \"product_id\", \"brand_name\", sum(\"net_weight\")\n"
+        + "from \"product\" group by \"product_id\", \"brand_name\")t\n"
+        + "group by \"product_id\"";
+    final String expected = "SELECT \"product_id\", COUNT(*)\n"
+        + "FROM (SELECT \"product_id\", COUNT(*)\nFROM \"foodmart\".\"product\"\n"
+        + "GROUP BY \"product_id\", \"brand_name\") AS \"t1\"\n"
+        + "GROUP BY \"product_id\"";
+    Sql sql = sql(query);
+    sql.ok(expected);
+  }
+
+  @Test public void testGroupByInSubQueryWithoutAgg() {
+    final String query = "select \"product_id\" from (\n"
+        + "select \"product_id\", \"brand_name\", sum(\"net_weight\")\n"
+        + "from \"product\" group by \"product_id\", \"brand_name\")t\n"
+        + "group by \"product_id\"";
+    final String expected = "SELECT \"product_id\"\n"
+        + "FROM (SELECT \"product_id\"\n"
+        + "FROM \"foodmart\".\"product\"\n"
+        + "GROUP BY \"product_id\", \"brand_name\") AS \"t1\"\n"
+        + "GROUP BY \"product_id\"";
+    Sql sql = sql(query);
+    sql.ok(expected);
+  }
+
+  @Test public void testSelectQueryWithGroupBySubQuery() {
+    final String query = "select \"product_class_id\", avg(\"product_id\")\n"
+        + "from (select \"product_class_id\", \"product_id\", avg(\"product_class_id\")\n"
+        + "from \"product\"\n"
+        + "group by \"product_class_id\", \"product_id\") as t\n"
+        + "group by \"product_class_id\"";
+    final String expected = "SELECT \"product_class_id\", AVG(\"product_id\")\n"
+        + "FROM (SELECT \"product_class_id\", \"product_id\"\n"
+        + "FROM \"foodmart\".\"product\"\n"
+        + "GROUP BY \"product_class_id\", \"product_id\") AS \"t1\"\n"
+        + "GROUP BY \"product_class_id\"";
+    sql(query).ok(expected);
+  }
+
   /** Fluid interface to run tests. */
   static class Sql {
     private final SchemaPlus schema;
