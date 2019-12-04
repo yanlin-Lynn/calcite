@@ -75,6 +75,8 @@ import org.apache.calcite.rel.stream.LogicalDelta;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCallBinding;
@@ -1676,13 +1678,20 @@ public class SqlToRelConverter {
           }
         }
 
-        // convert "1" to "row(1)"
-        call =
-            (SqlBasicCall) SqlStdOperatorTable.ROW.createCall(
-                SqlParserPos.ZERO,
-                node);
+        if(node instanceof SqlBasicCall
+            && ((SqlBasicCall) node).getOperator().kind == SqlKind.MULTISET_VALUE_CONSTRUCTOR) {
+          RelNode operandMultisetRel = convertMultisets(ImmutableList.of(node), bb);
+          System.out.println(RelOptUtil.toString(operandMultisetRel));
+          unionInputs.add(operandMultisetRel);
+        } else {
+          // convert "1" to "row(1)"
+          call =
+              (SqlBasicCall) SqlStdOperatorTable.ROW.createCall(
+                  SqlParserPos.ZERO,
+                  node);
+          unionInputs.add(convertRowConstructor(bb, call));
+        }
       }
-      unionInputs.add(convertRowConstructor(bb, call));
     }
     LogicalValues values =
         LogicalValues.create(cluster, rowType, tupleList.build());
@@ -3872,7 +3881,7 @@ public class SqlToRelConverter {
       final RelNode input;
       switch (call.getKind()) {
       case MULTISET_VALUE_CONSTRUCTOR:
-      case ARRAY_VALUE_CONSTRUCTOR:
+      // case ARRAY_VALUE_CONSTRUCTOR:
         final SqlNodeList list =
             new SqlNodeList(call.getOperandList(), call.getParserPosition());
         CollectNamespace nss =
@@ -3913,6 +3922,15 @@ public class SqlToRelConverter {
               cluster.traitSetOf(Convention.NONE),
               input,
               validator.deriveAlias(call, i));
+      final RexNode row = rexBuilder.makeCall(
+          SqlStdOperatorTable.ROW,
+            rexBuilder.makeCall(
+                SqlStdOperatorTable.SLICE,
+                rexBuilder.makeInputRef(collect, 0)));
+      RelDataTypeFieldImpl field2 = new RelDataTypeFieldImpl("EXPR$0", 0, row.getType());
+      RelDataType projectType = new RelRecordType(ImmutableList.of(field2));
+      final Project project = new LogicalProject(cluster, cluster.traitSet(),
+          collect, ImmutableList.of(row), projectType);
       joinList.add(collect);
     }
 

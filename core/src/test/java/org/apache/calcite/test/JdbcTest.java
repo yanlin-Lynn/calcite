@@ -17,6 +17,7 @@
 package org.apache.calcite.test;
 
 import org.apache.calcite.adapter.clone.CloneSchema;
+import org.apache.calcite.adapter.enumerable.EnumerableInterpretable;
 import org.apache.calcite.adapter.generate.RangeTable;
 import org.apache.calcite.adapter.java.AbstractQueryableTable;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -2028,6 +2029,51 @@ public class JdbcTest {
     CalciteAssert.that()
         .query("select array[1,2] as a from (values (1))")
         .returnsUnordered("A=[1, 2]");
+  }
+
+  @Test public void testNestedMultiset() {
+    /*
+    CalciteAssert.that()
+        .query("select *  from unnest(multiset[1, 2])")
+        .returns("EXPR$0=1\nEXPR$0=2\n");
+
+    CalciteAssert.that()
+        .query("select * from unnest(ARRAY[1, 2])")
+        .returns("EXPR$0=1\nEXPR$0=2\n");
+
+    CalciteAssert.that()
+        .query("select * from unnest(ARRAY[ARRAY[1,2], ARRAY[3,4]])")
+        .returns("EXPR$0=[1, 2]\nEXPR$0=[3, 4]\n");
+
+    CalciteAssert.that()
+        .query("select * from unnest(ARRAY[multiset[1,2], multiset[3,4]])")
+        .returns("EXPR$0=[1, 2]\nEXPR$0=[3, 4]\n");
+  */
+   // EnumerableInterpretable.useSpecial = true;
+    CalciteAssert.that()
+        .query("select multiset[multiset[1, 2], multiset[3, 4]]")
+        .returns("EXPR$0=[[1, 2], [3, 4]]\n");
+
+
+    //
+    /*
+    CalciteAssert.that()
+        .query("select multiset[ARRAY[1, 2]]")
+        .returns("EXPR$0=[[1, 2]]\n");
+     */
+
+    /*
+    EnumerableInterpretable.useSimpleSpecial = true;
+    CalciteAssert.that()
+        .query("select multiset[1, 2]")
+        .returns("EXPR$0=[1, 2]\n");
+     */
+
+    /*
+    CalciteAssert.that()
+        .query("select ARRAY[1, 2]")
+        .returns("EXPR$0=[[1, 2]]\n");
+     */
   }
 
   @Test public void testMultisetConstructor() {

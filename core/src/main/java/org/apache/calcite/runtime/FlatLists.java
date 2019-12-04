@@ -1251,7 +1251,7 @@ public class FlatLists {
   /** Empty list that implements the {@link Comparable} interface.
    *
    * @param <T> element type */
-  private static class ComparableEmptyList<T>
+  public static class ComparableEmptyList<T>
       extends AbstractList<T>
       implements ComparableList<T> {
     private ComparableEmptyList() {

@@ -1975,6 +1975,7 @@ public class CalciteAssert {
       int n = metaData.getColumnCount();
       if (n > 0) {
         for (int i = 1;; i++) {
+          Object obj = resultSet.getObject(i);
           buf.append(metaData.getColumnLabel(i))
               .append("=")
               .append(adjustValue(resultSet.getString(i)));

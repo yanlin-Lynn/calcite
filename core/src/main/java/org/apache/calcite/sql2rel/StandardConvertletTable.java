@@ -22,6 +22,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
+import org.apache.calcite.rel.type.RelRecordType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCallBinding;
@@ -62,6 +63,7 @@ import org.apache.calcite.sql.fun.SqlSequenceValueOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.MultisetSqlType;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -415,6 +417,13 @@ public class StandardConvertletTable extends ReflectiveConvertletTable {
             msType,
             rr.getOffset());
     assert msType.getComponentType().isStruct();
+    int sliceNum = 0;
+    RelDataType elementType = msType.getComponentType();
+    while (elementType instanceof RelRecordType) {
+      sliceNum++;
+      elementType = elementType.getFieldList().get(0).getType().getComponentType();
+    }
+
     if (!originalType.getComponentType().isStruct()) {
       // If the type is not a struct, the multiset operator will have
       // wrapped the type as a record. Add a call to the $SLICE operator
@@ -425,6 +434,11 @@ public class StandardConvertletTable extends ReflectiveConvertletTable {
       expr =
           cx.getRexBuilder().makeCall(originalType, SqlStdOperatorTable.SLICE,
               ImmutableList.of(expr));
+      sliceNum--;
+    }
+    while(sliceNum > 0) {
+      // expr = cx.getRexBuilder().makeCall(originalType, SqlStdOperatorTable.SLICE, ImmutableList.of(expr));
+      sliceNum--;
     }
     return expr;
   }

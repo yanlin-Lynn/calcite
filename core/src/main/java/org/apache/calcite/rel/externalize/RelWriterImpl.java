@@ -111,6 +111,7 @@ public class RelWriterImpl implements RelWriter {
       }
       break;
     }
+    s.append(", rowType = ").append(rel.getRowType().toString());
     pw.println(s);
     spacer.add(2);
     explainInputs(inputs);

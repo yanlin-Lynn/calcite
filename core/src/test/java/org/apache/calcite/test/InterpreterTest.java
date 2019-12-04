@@ -440,6 +440,11 @@ public class InterpreterTest {
         + "group by x";
     sql(sql).returnsRows("[a, -1.2, 15.0, 16.1, 5.366666666666667]");
   }
+
+  @Test public void testInterpretUnCollect() throws Exception {
+    final String sql = "select multiset[ARRAY[1,2], ARRAY[3,4]]";
+    sql(sql).returnsRows("[1]", "[2]");
+  }
 }
 
 // End InterpreterTest.java

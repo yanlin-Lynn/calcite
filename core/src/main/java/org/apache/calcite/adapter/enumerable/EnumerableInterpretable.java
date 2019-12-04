@@ -35,14 +35,19 @@ import org.apache.calcite.linq4j.tree.FieldDeclaration;
 import org.apache.calcite.linq4j.tree.VisitorImpl;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterImpl;
 import org.apache.calcite.runtime.ArrayBindable;
 import org.apache.calcite.runtime.Bindable;
 import org.apache.calcite.runtime.Hook;
+import org.apache.calcite.runtime.SimpleSpecialBindable;
+import org.apache.calcite.runtime.SpecialBindable;
 import org.apache.calcite.runtime.Typed;
 import org.apache.calcite.runtime.Utilities;
+import org.apache.calcite.sql.SqlExplainFormat;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.util.Util;
 
 import com.google.common.cache.Cache;
@@ -102,6 +107,9 @@ public class EnumerableInterpretable extends ConverterImpl
           .maximumSize(CalciteSystemProperty.BINDABLE_CACHE_MAX_SIZE.value())
           .build();
 
+  public static boolean useSpecial = false;
+  public static boolean useSimpleSpecial = false;
+
   public static Bindable toBindable(Map<String, Object> parameters,
       CalcitePrepare.SparkHandler spark, EnumerableRel rel,
       EnumerableRel.Prefer prefer) {
@@ -110,14 +118,22 @@ public class EnumerableInterpretable extends ConverterImpl
             parameters);
 
     final ClassDeclaration expr = relImplementor.implementRoot(rel, prefer);
+    System.out.println(RelOptUtil.dumpPlan("", rel, SqlExplainFormat.TEXT, SqlExplainLevel.NON_COST_ATTRIBUTES));
     String s = Expressions.toString(expr.memberDeclarations, "\n", false);
 
+    System.out.println(s);
     if (CalciteSystemProperty.DEBUG.value()) {
       Util.debugCode(System.out, s);
     }
 
     Hook.JAVA_PLAN.run(s);
 
+    if (useSimpleSpecial) {
+      return new SimpleSpecialBindable();
+    }
+    if (useSpecial) {
+      return new SpecialBindable();
+    }
     try {
       if (spark != null && spark.enabled()) {
         return spark.compile(expr, s);

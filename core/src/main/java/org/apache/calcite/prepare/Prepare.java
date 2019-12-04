@@ -263,6 +263,7 @@ public abstract class Prepare {
 
     RelRoot root =
         sqlToRelConverter.convertQuery(sqlQuery, needsValidation, true);
+    System.out.println(RelOptUtil.toString(root.rel));
     Hook.CONVERTED.run(root.rel);
 
     if (timingTracer != null) {
