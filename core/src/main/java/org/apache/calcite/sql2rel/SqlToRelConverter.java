@@ -3872,7 +3872,6 @@ public class SqlToRelConverter {
       final RelNode input;
       switch (call.getKind()) {
       case MULTISET_VALUE_CONSTRUCTOR:
-      case ARRAY_VALUE_CONSTRUCTOR:
         final SqlNodeList list =
             new SqlNodeList(call.getOperandList(), call.getParserPosition());
         CollectNamespace nss =

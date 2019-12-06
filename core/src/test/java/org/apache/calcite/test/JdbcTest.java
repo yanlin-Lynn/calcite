@@ -2067,6 +2067,25 @@ public class JdbcTest {
             "I=20; O=2");
   }
 
+  // JdbcTest
+  @Test public void testCollectionOrMapInMultiset() {
+    CalciteAssert.that()
+        .query("select multiset[array[1, 2], array[3, 4]]")
+        .returns("EXPR$0=[[1, 2], [3, 4]]\n");
+
+    /** Component type Map currently not supported in avatica
+    CalciteAssert.that()
+        .query("select multiset[map[1, 2], map[3, 4]]")
+        .returns("EXPR$0=[[1, 2], [3, 4]]\n");
+     */
+
+    /**
+    CalciteAssert.that()
+        .query("select multiset[multiset[1, 2], multiset[3, 4]]")
+        .returns("EXPR$0=[[1, 2], [3, 4]]\n");
+     */
+  }
+
   @Test public void testUnnestRecordType() {
     // unnest(RecordType(Array))
     CalciteAssert.that()
