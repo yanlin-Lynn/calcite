@@ -17,7 +17,9 @@
 package org.apache.calcite.interpreter;
 
 import org.apache.calcite.DataContext;
+import org.apache.calcite.adapter.enumerable.RexToLixTranslator;
 import org.apache.calcite.linq4j.Enumerable;
+import org.apache.calcite.linq4j.function.Function1;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
@@ -31,7 +33,15 @@ import java.util.List;
 public interface Compiler {
 
   /** Compiles an expression to an executable form. */
-  Scalar compile(List<RexNode> nodes, RelDataType inputRowType);
+  default Scalar compile(List<RexNode> nodes, RelDataType inputRowType) {
+    final Function1<String, RexToLixTranslator.InputGetter> correlates = a0 -> {
+      throw new UnsupportedOperationException();
+    };
+    return compile(nodes, inputRowType, correlates);
+  }
+
+  Scalar compile(List<RexNode> nodes, RelDataType inputRowType,
+      Function1<String, RexToLixTranslator.InputGetter> correlates);
 
   RelDataType combinedRowType(List<RelNode> inputs);
 

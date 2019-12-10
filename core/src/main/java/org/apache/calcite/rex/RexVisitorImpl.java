@@ -31,7 +31,7 @@ public class RexVisitorImpl<R> implements RexVisitor<R> {
 
   //~ Constructors -----------------------------------------------------------
 
-  protected RexVisitorImpl(boolean deep) {
+  public RexVisitorImpl(boolean deep) {
     this.deep = deep;
   }
 

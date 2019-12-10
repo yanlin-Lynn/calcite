@@ -16,9 +16,20 @@
  */
 package org.apache.calcite.interpreter;
 
+import org.apache.calcite.adapter.enumerable.RexToLixTranslator;
+import org.apache.calcite.linq4j.function.Function1;
+import org.apache.calcite.linq4j.tree.BlockBuilder;
+import org.apache.calcite.linq4j.tree.Expression;
+import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.rel.core.Filter;
 
 import com.google.common.collect.ImmutableList;
+
+import org.apache.calcite.rex.RexFieldAccess;
+import org.apache.calcite.rex.RexUtil;
+import org.apache.calcite.rex.RexVisitorImpl;
+
+import java.lang.reflect.Type;
 
 /**
  * Interpreter node that implements a
@@ -30,10 +41,33 @@ public class FilterNode extends AbstractSingleNode<Filter> {
 
   public FilterNode(Compiler compiler, Filter rel) {
     super(compiler, rel);
-    this.condition =
-        compiler.compile(ImmutableList.of(rel.getCondition()),
-            rel.getRowType());
     this.context = compiler.createContext();
+    final RexFieldAccess rexFieldAccess = rel.getCondition().accept(new RexVisitorImpl<RexFieldAccess>(true) {
+      @Override public RexFieldAccess visitFieldAccess(RexFieldAccess fieldAccess) {
+        return fieldAccess;
+      }
+    });
+    if (rexFieldAccess != null) {
+      final Function1<String, RexToLixTranslator.InputGetter> correlates = name -> {
+        return new RexToLixTranslator.InputGetter(){
+          @Override
+          public Expression field(BlockBuilder list, int index, Type storageType) {
+            // TODO: add parameter check here
+            Object inputValue = context.correlates.get(name);
+            final Expression expression = Expressions.constant(inputValue);
+            // list.append(expression);
+            return expression;
+          }
+        };
+      };
+      this.condition =
+          compiler.compile(ImmutableList.of(rel.getCondition()),
+              rel.getRowType(), correlates);
+    } else {
+      this.condition =
+          compiler.compile(ImmutableList.of(rel.getCondition()),
+              rel.getRowType());
+    }
   }
 
   public void run() throws InterruptedException {

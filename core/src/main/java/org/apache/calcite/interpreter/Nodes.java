@@ -19,6 +19,7 @@ package org.apache.calcite.interpreter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Collect;
+import org.apache.calcite.rel.core.Correlate;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Match;
@@ -98,6 +99,10 @@ public class Nodes {
 
     public void visit(Uncollect uncollect) {
       node = new UncollectNode(this, uncollect);
+    }
+
+    public void visit(Correlate correlate) {
+      node = new CorrelateNode(this, correlate);
     }
   }
 }

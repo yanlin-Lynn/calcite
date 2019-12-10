@@ -18,11 +18,15 @@ package org.apache.calcite.interpreter;
 
 import org.apache.calcite.DataContext;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Context for executing a scalar expression in an interpreter.
  */
 public class Context {
   public final DataContext root;
+  public static final Map<String, Object> correlates = new HashMap<>();
 
   /** Values of incoming columns from all inputs. */
   public Object[] values;

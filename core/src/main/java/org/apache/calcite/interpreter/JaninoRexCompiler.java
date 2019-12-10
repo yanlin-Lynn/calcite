@@ -65,7 +65,8 @@ public class JaninoRexCompiler implements Interpreter.ScalarCompiler {
     this.rexBuilder = rexBuilder;
   }
 
-  public Scalar compile(List<RexNode> nodes, RelDataType inputRowType) {
+  @Override  public Scalar compile(List<RexNode> nodes,
+      RelDataType inputRowType, Function1<String, RexToLixTranslator.InputGetter> correlates) {
     final RexProgramBuilder programBuilder =
         new RexProgramBuilder(inputRowType, rexBuilder);
     for (RexNode node : nodes) {
@@ -90,9 +91,6 @@ public class JaninoRexCompiler implements Interpreter.ScalarCompiler {
                         BuiltInMethod.CONTEXT_VALUES.field),
                     PhysTypeImpl.of(javaTypeFactory, inputRowType,
                         JavaRowFormat.ARRAY, false))));
-    final Function1<String, RexToLixTranslator.InputGetter> correlates = a0 -> {
-      throw new UnsupportedOperationException();
-    };
     final Expression root =
         Expressions.field(context_, BuiltInMethod.CONTEXT_ROOT.field);
     final SqlConformance conformance =
@@ -146,6 +144,7 @@ public class JaninoRexCompiler implements Interpreter.ScalarCompiler {
         Expressions.classDecl(Modifier.PUBLIC, "Buzz", null,
             ImmutableList.of(Scalar.class), declarations);
     String s = Expressions.toString(declarations, "\n", false);
+    // System.out.println(s);
     if (CalciteSystemProperty.DEBUG.value()) {
       Util.debugCode(System.out, s);
     }

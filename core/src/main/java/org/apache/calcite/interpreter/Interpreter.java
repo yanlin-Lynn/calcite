@@ -17,6 +17,7 @@
 package org.apache.calcite.interpreter;
 
 import org.apache.calcite.DataContext;
+import org.apache.calcite.adapter.enumerable.RexToLixTranslator;
 import org.apache.calcite.config.CalciteSystemProperty;
 import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
@@ -24,6 +25,7 @@ import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.Linq4j;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.linq4j.TransformedEnumerator;
+import org.apache.calcite.linq4j.function.Function1;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgram;
@@ -142,11 +144,12 @@ public class Interpreter extends AbstractEnumerable<Object[]>
 
   /** Not used. */
   private class FooCompiler implements ScalarCompiler {
-    public Scalar compile(List<RexNode> nodes, RelDataType inputRowType) {
+    public Scalar compile(List<RexNode> nodes,
+        RelDataType inputRowType,Function1<String, RexToLixTranslator.InputGetter> correlates) {
       final RexNode node = nodes.get(0);
       if (node instanceof RexCall) {
         final RexCall call = (RexCall) node;
-        final Scalar argScalar = compile(call.getOperands(), inputRowType);
+        final Scalar argScalar = compile(call.getOperands(), inputRowType, correlates);
         return new Scalar() {
           final Object[] args = new Object[call.getOperands().size()];
 
@@ -482,12 +485,13 @@ public class Interpreter extends AbstractEnumerable<Object[]>
     public void rewrite(RelNode r) {
     }
 
-    public Scalar compile(List<RexNode> nodes, RelDataType inputRowType) {
+    public Scalar compile(List<RexNode> nodes, RelDataType inputRowType,
+        Function1<String, RexToLixTranslator.InputGetter> correlates) {
       if (inputRowType == null) {
         inputRowType = interpreter.dataContext.getTypeFactory().builder()
             .build();
       }
-      return scalarCompiler.compile(nodes, inputRowType);
+      return scalarCompiler.compile(nodes, inputRowType, correlates);
     }
 
     public RelDataType combinedRowType(List<RelNode> inputs) {
@@ -582,7 +586,15 @@ public class Interpreter extends AbstractEnumerable<Object[]>
   /** Converts a list of expressions to a scalar that can compute their
    * values. */
   interface ScalarCompiler {
-    Scalar compile(List<RexNode> nodes, RelDataType inputRowType);
+    default Scalar compile(List<RexNode> nodes, RelDataType inputRowType) {
+      final Function1<String, RexToLixTranslator.InputGetter> correlates = a0 -> {
+        throw new UnsupportedOperationException();
+      };
+      return compile(nodes, inputRowType, correlates);
+    }
+
+    Scalar compile(List<RexNode> nodes, RelDataType inputRowType,
+        Function1<String, RexToLixTranslator.InputGetter> correlates);
   }
 }
 

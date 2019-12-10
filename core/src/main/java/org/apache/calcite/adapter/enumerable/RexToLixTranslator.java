@@ -708,8 +708,8 @@ public class RexToLixTranslator {
           throw new RuntimeException("Cannot translate " + expr + " since "
               + "correlate variables resolver is not defined");
         }
-        InputGetter getter =
-            correlates.apply(((RexCorrelVariable) target).getName());
+        String name = ((RexCorrelVariable) target).getName();
+        InputGetter getter = correlates.apply(name);
         Expression y = getter.field(list, fieldIndex, storageType);
         Expression input = list.append("corInp" + fieldIndex + "_", y); // safe to share
         return handleNullUnboxingIfNecessary(input, nullAs, storageType);

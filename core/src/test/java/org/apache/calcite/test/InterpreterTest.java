@@ -20,6 +20,7 @@ import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.interpreter.Interpreter;
 import org.apache.calcite.linq4j.QueryProvider;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
@@ -118,6 +119,7 @@ public class InterpreterTest {
       SqlNode validate = planner.validate(parse);
       final RelRoot root = planner.rel(validate);
       RelNode convert = project ? root.project() : root.rel;
+      System.out.println(RelOptUtil.toString(convert));
       final Interpreter interpreter = new Interpreter(dataContext, convert);
       assertRows(interpreter, unordered, rows);
       return this;
@@ -488,6 +490,13 @@ public class InterpreterTest {
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), equalTo("NULL value for unnest."));
     }
+  }
+
+  @Test public void testInterpretCorrelate() throws Exception {
+    final String sql = "select x, y from (values (1, 'a'), (2, 'b'), (3, 'c')) as t(x, y)\n"
+        + "where exists\n"
+        + "(select 1 from (values (1, 'd'), (3, 'g')) as t2(x, y) where t2.x = t.x and t2.x > 2)";
+    sql(sql).returnsRowsUnordered("[1, a]");
   }
 }
 
