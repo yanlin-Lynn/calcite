@@ -503,7 +503,14 @@ public abstract class SqlImplementor {
         return toSql(program, program.getExprList().get(index));
 
       case INPUT_REF:
-        return field(((RexInputRef) rex).getIndex());
+        SqlNode sqlNode = field(((RexInputRef) rex).getIndex());
+        switch (sqlNode.getKind()) {
+        case AS:
+          SqlBasicCall asCall = (SqlBasicCall) sqlNode;
+          return asCall.getOperandList().get(1);
+        default:
+          return sqlNode;
+        }
 
       case FIELD_ACCESS:
         final Deque<RexFieldAccess> accesses = new ArrayDeque<>();
@@ -1151,6 +1158,11 @@ public abstract class SqlImplementor {
           final SqlNode mappedSqlNode =
               ordinalMap.get(field.getName().toLowerCase(Locale.ROOT));
           if (mappedSqlNode != null) {
+            switch (mappedSqlNode.getKind()) {
+            case AS:
+              SqlBasicCall asCall = (SqlBasicCall) mappedSqlNode;
+              return asCall.getOperandList().get(1);
+            }
             return mappedSqlNode;
           }
           return new SqlIdentifier(!qualified
