@@ -44,21 +44,32 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgramBuilder;
 import org.apache.calcite.rex.RexWindowBounds;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlExplainFormat;
 import org.apache.calcite.sql.SqlExplainLevel;
+import org.apache.calcite.sql.SqlFunctionCategory;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlIntervalQualifier;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.type.OperandTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.type.SqlOperandTypeChecker;
+import org.apache.calcite.sql.type.SqlOperandTypeInference;
+import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.test.JdbcTest;
 import org.apache.calcite.test.MockSqlOperatorTable;
 import org.apache.calcite.test.RelBuilderTest;
+import org.apache.calcite.test.SqlToRelTestBase;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Holder;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.Optionality;
 import org.apache.calcite.util.TestUtil;
 
 import com.google.common.collect.ImmutableList;
@@ -81,7 +92,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for {@link org.apache.calcite.rel.externalize.RelJson}.
  */
-class RelWriterTest {
+class RelWriterTest extends SqlToRelTestBase {
   public static final String XX = "{\n"
       + "  \"rels\": [\n"
       + "    {\n"
@@ -895,6 +906,26 @@ class RelWriterTest {
     assertThat(s, isLinux(expected));
   }
 
+  @Test void testUDAF(){
+    final FrameworkConfig config = RelBuilderTest.config().build();
+    final RelBuilder builder = RelBuilder.create(config);
+    final RelNode rel = builder
+        .scan("EMP")
+        .project(builder.field("ENAME"), builder.field("DEPTNO"))
+        .aggregate(
+            builder.groupKey("ENAME"),
+            builder.aggregateCall(MyAggFunc.INSTANCE, builder.field("DEPTNO")))
+        .build();
+    String relJson = RelOptUtil.dumpPlan("", rel,
+        SqlExplainFormat.JSON, SqlExplainLevel.EXPPLAN_ATTRIBUTES);
+    final String s = deserializeAndDumpToTextFormat(getSchema(rel), relJson);
+    final String expected =
+        "LogicalAggregate(group=[{0}], agg#0=[myAggFunc($1)])\n" +
+            "  LogicalProject(ENAME=[$1], DEPTNO=[$7])\n" +
+            "    LogicalTableScan(table=[[scott, EMP]])\n";
+    assertThat(s, isLinux(expected));
+  }
+
   private RelNode createSortPlan(RelDistribution distribution) {
     final FrameworkConfig config = RelBuilderTest.config().build();
     final RelBuilder builder = RelBuilder.create(config);
@@ -902,5 +933,32 @@ class RelWriterTest {
             .sortExchange(distribution,
                 RelCollations.of(0))
             .build();
+  }
+
+  public static class MyAggFunc extends SqlAggFunction {
+
+    protected MyAggFunc(String name, SqlIdentifier sqlIdentifier, SqlKind kind,
+        SqlReturnTypeInference returnTypeInference,
+        SqlOperandTypeInference operandTypeInference,
+        SqlOperandTypeChecker operandTypeChecker,
+        SqlFunctionCategory funcType, boolean requiresOrder, boolean requiresOver,
+        Optionality requiresGroupOrder) {
+      super(name, sqlIdentifier, kind, returnTypeInference,
+          operandTypeInference, operandTypeChecker, funcType, requiresOrder,
+          requiresOver, requiresGroupOrder);
+    }
+
+    public static MyAggFunc INSTANCE = new MyAggFunc(
+        "myAggFunc",
+        null,
+        SqlKind.OTHER_FUNCTION,
+        ReturnTypes.BIGINT,
+        null,
+        OperandTypes.ONE_OR_MORE,
+        SqlFunctionCategory.USER_DEFINED_FUNCTION,
+        false,
+        false,
+        Optionality.FORBIDDEN
+    );
   }
 }
