@@ -1566,6 +1566,65 @@ public class MaterializedViewSubstitutionVisitorTest extends AbstractMaterialize
     sql(mv, query).ok();
   }
 
+  @Test void testDeduplicateTable() {
+    final String mv = ""
+        + "SELECT  \"emps\".\"empid\" \"empidA\"\n"
+        + "        ,\"emps\".\"deptno\"\n"
+        + "        ,tbl.\"deptno\"\n"
+        + "        ,tbl.\"empid\" \"empidB\"\n"
+        + "        ,tbl.\"name\"\n"
+        + "FROM \"emps\"\n"
+        + "LEFT JOIN (\n"
+        + "              SELECT  \"depts\".\"deptno\" AS \"deptno\"\n"
+        + "                      ,\"locations\".\"empid\" AS \"empid\"\n"
+        + "                      ,\"depts\".\"name\" AS \"name\"\n"
+        + "              FROM \"depts\"\n"
+        + "              LEFT JOIN \"locations\"\n"
+        + "              ON  \"depts\".\"deptno\" = \"locations\".\"empid\"\n"
+        + "          ) tbl\n"
+        + "ON  \"emps\".\"deptno\" = tbl.\"deptno\"";
+    final String query = ""
+        + "SELECT t1.\"empid\", t1.\"deptnoA\", t2.\"deptno\"\n"
+        + "FROM\n"
+        + "("
+        + " SELECT  \"emps\".\"empid\" as \"empid\"\n"
+        + "        ,\"emps\".\"deptno\" as \"deptno\"\n"
+        + "        ,tbl.\"deptno\" as \"deptnoA\"\n"
+        + "        ,tbl.\"empid\" \"empidB\"\n"
+        + "        ,tbl.\"name\"\n"
+        + " FROM \"emps\"\n"
+        + " LEFT JOIN (\n"
+        + "              SELECT  \"depts\".\"deptno\" AS \"deptno\"\n"
+        + "                      ,\"dependents\".\"empid\" AS \"empid\"\n"
+        + "                      ,\"depts\".\"name\" AS \"name\"\n"
+        + "              FROM \"depts\"\n"
+        + "              LEFT JOIN \"dependents\"\n"
+        + "              ON  \"depts\".\"deptno\" = \"dependents\".\"empid\"\n"
+        + "          ) tbl\n"
+        + " ON  \"emps\".\"deptno\" = tbl.\"deptno\"\n"
+        + ") t1\n"
+        + "LEFT JOIN"
+        + "("
+        + " SELECT  \"emps\".\"empid\" \"empid\"\n"
+        + "        ,\"emps\".\"deptno\"\n"
+        + "        ,tbl.\"deptno\" as \"deptnoA\"\n"
+        + "        ,tbl.\"empid\" \"empidB\"\n"
+        + "        ,tbl.\"name\"\n"
+        + " FROM \"emps\"\n"
+        + " LEFT JOIN (\n"
+        + "              SELECT  \"depts\".\"deptno\" AS \"deptno\"\n"
+        + "                      ,\"locations\".\"empid\" AS \"empid\"\n"
+        + "                      ,\"depts\".\"name\" AS \"name\"\n"
+        + "              FROM \"depts\"\n"
+        + "              LEFT JOIN \"locations\"\n"
+        + "              ON  \"depts\".\"deptno\" = \"locations\".\"empid\"\n"
+        + "          ) tbl\n"
+        + " ON  \"emps\".\"deptno\" = tbl.\"deptno\"\n"
+        + ") t2\n"
+        + "ON t1.\"empid\" = t2.\"empid\" and t1.\"deptno\" = t2.\"deptno\"";
+    sql(mv, query).ok();
+  }
+
   final JavaTypeFactoryImpl typeFactory =
       new JavaTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
   private final RexBuilder rexBuilder = new RexBuilder(typeFactory);
